@@ -41,6 +41,10 @@ locals {
   ]
 }
 
+resource "null_resource" "healthchecks" {
+  for_each = { for i, v in local.healthchecks : v.index_key => true }
+}
+
 # Regional Health Checks
 resource "google_compute_region_health_check" "default" {
   for_each    = { for i, v in local.healthchecks : v.index_key => v if v.is_regional && !v.is_legacy }
@@ -89,6 +93,7 @@ resource "google_compute_region_health_check" "default" {
   log_config {
     enable = each.value.logging
   }
+  depends_on = [null_resource.healthchecks]
 }
 
 # Global Health Checks
@@ -138,6 +143,7 @@ resource "google_compute_health_check" "default" {
   log_config {
     enable = each.value.logging
   }
+  depends_on = [null_resource.healthchecks]
 }
 
 
@@ -150,6 +156,7 @@ resource "google_compute_http_health_check" "default" {
   port               = each.value.port
   check_interval_sec = each.value.interval
   timeout_sec        = each.value.timeout
+  depends_on = [null_resource.healthchecks]
 }
 
 # Legacy HTTPS Health Check
@@ -161,4 +168,5 @@ resource "google_compute_https_health_check" "default" {
   port               = each.value.port
   check_interval_sec = each.value.interval
   timeout_sec        = each.value.timeout
+  depends_on = [null_resource.healthchecks]
 }
